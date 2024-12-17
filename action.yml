@@ -19,7 +19,12 @@ inputs:
     required: false
     default: ./.git ./.github ./node_modules ./tests ./.env.local
 
-  post-upload-commands:
+  pre-deploy-commands:
+    description: 'Commands to run pre deployment'
+    required: false
+    default: ''
+
+  post-deploy-commands:
     description: 'Commands to run after deployment'
     required: false
     default: ''
@@ -49,11 +54,16 @@ runs:
       run: scp ../build.tar.gz ${{ inputs.ssh-user }}@${{ inputs.ssh-host }}:${{ inputs.deployment-path }}
       shell: bash
 
+    - name: Pre-Deploy Commands
+      if: ${{ inputs.pre-deploy-commands != '' }}
+      run: ssh ${{ inputs.ssh-user }}@${{ inputs.ssh-host }} 'cd ${{ inputs.deployment-path }}; ${{ inputs.pre-deploy-commands }}'
+      shell: bash
+
     - name: Extract archive on remote host
       run: ssh ${{ inputs.ssh-user }}@${{ inputs.ssh-host }} 'cd ${{ inputs.deployment-path }}; tar -xf build.tar.gz; rm build.tar.gz'
       shell: bash
 
-    - name: Post-Upload Commands
-      if: ${{ inputs.post-upload-commands != '' }}
-      run: ssh ${{ inputs.ssh-user }}@${{ inputs.ssh-host }} 'cd ${{ inputs.deployment-path }}; ${{ inputs.post-upload-commands }}'
+    - name: Post-Deploy Commands
+      if: ${{ inputs.post-deploy-commands != '' }}
+      run: ssh ${{ inputs.ssh-user }}@${{ inputs.ssh-host }} 'cd ${{ inputs.deployment-path }}; ${{ inputs.post-deploy-commands }}'
       shell: bash
